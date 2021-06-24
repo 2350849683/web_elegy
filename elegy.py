@@ -1,63 +1,19 @@
 from wsgiref.simple_server import make_server
+from beaker.middleware import SessionMiddleware
+# Every WSGI application must have an application object - a callable
+# object that accepts two arguments. For that purpose, we're going to
+# use a function (note that you're not limited to a function, you can
+# use a class for example). The first argument passed to the function
+# is a dictionary containing CGI-style environment variables and the
+# second variable is the callable object.
+def hello_world_app(environ, start_response):
+    # Get the session object from the environ
+    start_response('200 OK', [('Content-type', 'text/plain')])
 
+    return  [b"ok"]
 
-class Elegy(object):
+with make_server('', 8000,hello_world_app) as httpd:
+    print("Serving on port 8000...")
 
-    def __init__(self):
-        self.config = {
-            "port" :8000,
-            "host" :""
-        }
-
-    def run(self):
-        run_dev(self.config["host"],self.config["port"])
-
-    def process_func(self,environ):
-        response=ElegyResponse()
-        return response.render(environ["PATH_INFO"])
-
-
-class ElegyResponse(object):  #获得的响应
-    def __init__(self):
-        self.status_codes = {
-            200: '200 OK',
-            404: '404 Not Found',
-        }
-        self.route_dict = {
-            '/': self.index,
-            '/hello': self.hello
-        }
-
-    def index(self):
-        return [b"OK"]
-
-    def hello(self):
-        return [b"hello"]
-
-    def elegy_404(self):
-        return [b"404"]
-
-    def render(self,env):
-        if env in self.route_dict:
-            body = self.route_dict[env]()
-            status = self.status_codes[200]
-        else:
-            body = self.elegy_404()
-            status = self.status_codes[404]
-        return body, status
-
-def application(environ, start_response):
-    elegy=Elegy()
-    body, status = elegy.process_func(environ)
-
-    start_response(status, [('Content-type', 'text/plain')])
-
-    return body
-
-
-def run_dev(host,port):
-    with make_server(host,port,application) as httpd:
-        print("Serving on port 8000...")
-        httpd.serve_forever()
-
-Elegy().run()
+    # Serve until process is killed
+    httpd.serve_forever()
