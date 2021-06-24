@@ -1,6 +1,17 @@
 from wsgiref.simple_server import make_server
 
 
+def index():
+    return [b"OK"]
+
+
+def hello():
+    return [b"hello"]
+
+
+def elegy_404():
+    return [b"404"]
+
 class Elegy(object):
 
     def __init__(self):
@@ -24,25 +35,17 @@ class ElegyResponse(object):  #获得的响应
             404: '404 Not Found',
         }
         self.route_dict = {
-            '/': self.index,
-            '/hello': self.hello
+            '/': index,
+            '/hello': hello
         }
 
-    def index(self):
-        return [b"OK"]
-
-    def hello(self):
-        return [b"hello"]
-
-    def elegy_404(self):
-        return [b"404"]
 
     def render(self,env):
         if env in self.route_dict:
             body = self.route_dict[env]()
             status = self.status_codes[200]
         else:
-            body = self.elegy_404()
+            body = elegy_404()
             status = self.status_codes[404]
         return body, status
 
