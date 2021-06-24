@@ -8,9 +8,14 @@ def index():
 def hello():
     return [b"hello"]
 
-
 def elegy_404():
     return [b"404"]
+
+route_dict = {
+    '/': index,
+    '/hello': hello
+}
+
 
 class Elegy(object):
 
@@ -34,15 +39,10 @@ class ElegyResponse(object):  #获得的响应
             200: '200 OK',
             404: '404 Not Found',
         }
-        self.route_dict = {
-            '/': index,
-            '/hello': hello
-        }
-
 
     def render(self,env):
-        if env in self.route_dict:
-            body = self.route_dict[env]()
+        if env in route_dict:
+            body = route_dict[env]()
             status = self.status_codes[200]
         else:
             body = elegy_404()
