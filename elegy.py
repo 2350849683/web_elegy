@@ -19,12 +19,17 @@ route_dict = {
 
 class Elegy(object):
 
-    def __init__(self):
+    def __init__(self,configuration):
+        global _hub
+
+        if _hub is  None:
+            _hub=self
+
         self.config = {
             "port" :8000,
             "host" :""
         }
-
+        if configuration is not None: self.config.update(configuration)
     def run(self):
         run_dev(self.config["host"],self.config["port"])
 
@@ -49,9 +54,22 @@ class ElegyResponse(object):  #获得的响应
             status = self.status_codes[404]
         return body, status
 
+_hub=None
+
+def init(configuration=None):
+    global _hub
+    if _hub is None:
+        _hub = Elegy(configuration)
+
+
+def run():
+    """Start Juno, with an optional mode argument."""
+    if _hub is None: init()
+    return _hub.run()
+
+
 def application(environ, start_response):
-    elegy=Elegy()
-    body, status = elegy.process_func(environ)
+    body, status = _hub.process_func(environ)
 
     start_response(status, [('Content-type', 'text/plain')])
 
@@ -63,4 +81,6 @@ def run_dev(host,port):
         print("Serving on port 8000...")
         httpd.serve_forever()
 
-Elegy().run()
+init({"port":9000})
+run()
+
