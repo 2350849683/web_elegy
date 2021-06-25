@@ -82,15 +82,13 @@ class JunoRoute(object):
 
 
 
-
-
 def init(configuration=None): #初始化
     global _hub
     if _hub is None:
         _hub = Elegy(configuration)
 
 def elegy_404():  #报错
-    return [b"404"]
+    return "404"
 
 def run():#启动
     """Start Juno, with an optional mode argument."""
@@ -107,8 +105,7 @@ def application(environ, start_response):   #返回结果
     body, status = _hub.process_func(environ)
 
     start_response(status, [('Content-type', 'text/plain')])
-
-    return body
+    return [body.encode("utf-8")]
 
 
 def run_dev(host,port):  #启动服务

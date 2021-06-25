@@ -1,11 +1,11 @@
 from elegy import *
 @route("/")
 def index():
-    return [b"OK"]
+    return "OK"
 
-@route("/hello/*:name/")
-def hello(name):
-    a="hello %s " % name
-    return [a.encode("utf-8")]
+@route("/hello/*:name/*:age/")
+def hello(name,age):
+    a=f"hello {name} age {age}"
+    return a
 
 run()
