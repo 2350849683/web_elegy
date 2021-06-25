@@ -105,7 +105,7 @@ def application(environ, start_response):   #返回结果
     body, status = _hub.process_func(environ)
 
     start_response(status, [('Content-type', 'text/plain')])
-    return [body.encode("utf-8")]
+    return [body.encode("gbk")]
 
 
 def run_dev(host,port):  #启动服务

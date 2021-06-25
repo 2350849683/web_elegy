@@ -1,7 +1,7 @@
 from elegy import *
 @route("/")
 def index():
-    return "OK"
+    return "首页"
 
 @route("/hello/*:name/*:age/")
 def hello(name,age):
