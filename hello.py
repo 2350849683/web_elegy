@@ -9,4 +9,8 @@ def hello(web):
     return web.input()
 
 
+@route("/he")
+def hello(web):
+    return "hello world"
+
 run()
