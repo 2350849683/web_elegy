@@ -1,15 +1,15 @@
 from wsgiref.simple_server import make_server
 import cgi,json
 from urllib.parse import parse_qs
-
-_hub=None
+import  threading
+local = threading.local()
+local.hub=None
 class Elegy(object):
 
     def __init__(self,configuration):
-        global _hub
         self.routes=[]
-        if _hub is  None:
-            _hub=self
+        if local.hub is  None:
+            local.hub=self
 
         self.config = {
             "port" :8000,
@@ -118,22 +118,21 @@ class  ElegyRoute(object):
 
 
 def init(configuration=None): #初始化
-    global _hub
-    if _hub is None:
-        _hub = Elegy(configuration)
+    if local.hub is None:
+        local.hub = Elegy(configuration)
 
 def elegy_404():  #报错
     return "404"
 
 def run():#启动
     """Start Juno, with an optional mode argument."""
-    if _hub is None: init()
-    return _hub.run()
+    if local.hub is None: init()
+    return local.hub.run()
 
 
 def route(url=None, method='*'):
-    if _hub is None: init()
-    def wrap(f): _hub.route(url, f, method)
+    if local.hub is None: init()
+    def wrap(f): local.hub.route(url, f, method)
     return wrap
 
 def post(url=None):   return route(url, 'post')
@@ -154,7 +153,7 @@ def application(environ, start_response):   #返回结果
     else:
         environ['POST_DICT']={}
 
-    body, status = _hub.process_func(environ,environ['REQUEST_METHOD'])
+    body, status = local.hub.process_func(environ,environ['REQUEST_METHOD'])
 
     start_response(status, [('Content-type', 'text/plain')])
     return [str(body).encode("gbk")]
