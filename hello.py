@@ -1,10 +1,10 @@
 from elegy import *
-@get("/")
+@route("/", method=["POST","GET"])
 def index(web):
 
     return web.input()
 
-@post("/hello")
+@route("/hello")
 def hello(web):
     return web.input()
 

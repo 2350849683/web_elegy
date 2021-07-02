@@ -1,15 +1,15 @@
 from wsgiref.simple_server import make_server
 import cgi,json
 from urllib.parse import parse_qs
-import  threading
-local = threading.local()
-local.hub=None
+
+_hub=None
 class Elegy(object):
 
     def __init__(self,configuration):
+        global _hub
         self.routes=[]
-        if local.hub is  None:
-            local.hub=self
+        if _hub is  None:
+            _hub=self
 
         self.config = {
             "port" :8000,
@@ -22,13 +22,10 @@ class Elegy(object):
 
         self.routes.append( ElegyRoute(url, func,method))
 
-
-
-
     def run(self): #启动
         run_dev(self.config["host"],self.config["port"])
 
-    def process_func(self,environ,method='*'):  #获取响应
+    def process_func(self,environ,method='GET'):  #获取响应
         req_obj = ElegyRequest(environ)
         request=environ["PATH_INFO"]
         if request[-1] != '/': request += '/'
@@ -101,13 +98,14 @@ class  ElegyRoute(object):
         else: buffer += '/'
         self.url = re.compile(buffer)
         self.func = func
-        self.method = method.upper()
+        self.method = method
+
         self.params = {}
 
     def match(self, request,method):
         match_obj = self.url.match(request) #判断是否这个路径
         if match_obj is None: return False
-        if self.method != '*' and self.method != method: return False
+        if method  not in self.method : return False
         self.params.update(match_obj.groupdict()) #存储动态路由的值
         return True
 
@@ -118,25 +116,23 @@ class  ElegyRoute(object):
 
 
 def init(configuration=None): #初始化
-    if local.hub is None:
-        local.hub = Elegy(configuration)
+    global _hub
+    if _hub is None:
+        _hub = Elegy(configuration)
 
 def elegy_404():  #报错
     return "404"
 
 def run():#启动
     """Start Juno, with an optional mode argument."""
-    if local.hub is None: init()
-    return local.hub.run()
+    if _hub is None: init()
+    return _hub.run()
 
 
-def route(url=None, method='*'):
-    if local.hub is None: init()
-    def wrap(f): local.hub.route(url, f, method)
+def route(url=None, method='GET'):
+    if _hub is None: init()
+    def wrap(f): _hub.route(url, f, method)
     return wrap
-
-def post(url=None):   return route(url, 'post')
-def get(url=None):    return route(url, 'get')
 
 
 def application(environ, start_response):   #返回结果
@@ -153,7 +149,7 @@ def application(environ, start_response):   #返回结果
     else:
         environ['POST_DICT']={}
 
-    body, status = local.hub.process_func(environ,environ['REQUEST_METHOD'])
+    body, status = _hub.process_func(environ,environ['REQUEST_METHOD'])
 
     start_response(status, [('Content-type', 'text/plain')])
     return [str(body).encode("gbk")]
