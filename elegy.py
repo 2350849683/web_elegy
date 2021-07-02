@@ -54,6 +54,8 @@ class ElegyRequest(object): #返回请求信息
     def __init__(self,request):
         if request['PATH_INFO'][-1] != '/': request['PATH_INFO'] += '/'
         self.raw = request
+        self.method=request['REQUEST_METHOD']
+        self.headers=request['CONTENT_TYPE']
         self.raw['input'] = {}
         self.location = request['PATH_INFO']
         self.combine_request_dicts()
@@ -136,7 +138,6 @@ def route(url=None, method='GET'):
 
 
 def application(environ, start_response):   #返回结果
-
     environ['QUERY_DICT']=cgi.parse_qs(environ['QUERY_STRING'],
                  keep_blank_values=1)
 
