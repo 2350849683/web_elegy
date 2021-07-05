@@ -1,15 +1,16 @@
 from elegy import *
 
 @route("/", method=["POST","GET"])
-def index(web):
-    return web.headers,web.method
+def index():
+
+    return request.args,request.headers,request.method
 
 @route("/hello")
-def hello(web):
+def hello1():
 
-    return web.input()
+    return request.method
 
 @route("/he")
-def hello(web):
+def hello():
     return "hello world"
 run()

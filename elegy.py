@@ -1,7 +1,7 @@
 from wsgiref.simple_server import make_server
-import cgi,json
+import cgi,json,threading
 from urllib.parse import parse_qs
-
+local = threading.local()
 _hub=None
 class Elegy(object):
 
@@ -26,16 +26,31 @@ class Elegy(object):
         run_dev(self.config["host"],self.config["port"])
 
     def process_func(self,environ,method='GET'):  #获取响应
-        req_obj = ElegyRequest(environ)
+        local.req = ElegyRequest(environ)
         request=environ["PATH_INFO"]
         if request[-1] != '/': request += '/'
         for route in self.routes:
             if not route.match(request,method): continue
-            response = route.dispatch(req_obj)
+            response = route.dispatch()
             if response is not  None:
                 return ElegyResponse().render(response)
 
         return ElegyResponse().render("未注册",None)
+
+class  requests:
+    @property
+    def args (self):
+        return  local.req.input()
+    @property
+    def method(self):
+        return local.req.method
+    @property
+    def headers(self):
+        return local.req.headers
+
+
+request=requests()
+
 
 class ElegyResponse(object):  #获得的响应
     status_codes = {
@@ -75,11 +90,8 @@ class ElegyRequest(object): #返回请求信息
                 pass
         self.raw['input'] = input_dict
 
-    def input(self, arg=None):
-        if arg is None: return self.raw['input']
-        if arg in self.raw['input']:
-            return self.raw['input'][arg]
-        return None
+    def input(self):
+        return self.raw['input']
 
 
 
@@ -111,9 +123,9 @@ class  ElegyRoute(object):
         self.params.update(match_obj.groupdict()) #存储动态路由的值
         return True
 
-    def dispatch(self,req):  #获取路由响应
+    def dispatch(self):  #获取路由响应
 
-        return self.func(req,**self.params)
+        return self.func(**self.params)
 
 
 
