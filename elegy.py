@@ -1,5 +1,5 @@
 from wsgiref.simple_server import make_server
-import cgi,json,threading
+import cgi,json,threading,jinja2
 from urllib.parse import parse_qs
 local = threading.local()
 _hub=None
@@ -13,10 +13,11 @@ class Elegy(object):
 
         self.config = {
             "port" :8000,
-            "host" :""
+            "host" :"",
+            'template_root': './templates/'
         }
         if configuration is not None: self.config.update(configuration)
-
+        self.setup_templates()
     def route(self, url, func,method):
         if url is None: url = '/' + func.__name__ + '/'
 
@@ -36,6 +37,19 @@ class Elegy(object):
                 return ElegyResponse().render(response)
 
         return ElegyResponse().render("未注册",None)
+
+    def setup_templates(self):
+        templates_dir = self.config["template_root"]
+        extensions = ['jinja2.ext.i18n']
+        self.config['template_env'] = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(
+                searchpath=templates_dir,
+                encoding='utf-8',
+            ),
+            auto_reload=True,
+            extensions=extensions,
+        )
+
 
 class  requests:
     @property
@@ -70,7 +84,11 @@ class ElegyRequest(object): #返回请求信息
         if request['PATH_INFO'][-1] != '/': request['PATH_INFO'] += '/'
         self.raw = request
         self.method=request['REQUEST_METHOD']
-        self.headers=request['CONTENT_TYPE']
+        self.headers={
+            "ACCEPT_ENCODING":request['HTTP_ACCEPT_ENCODING'],
+            "CONTENT_TYPE":request['CONTENT_TYPE'],
+            "USER_AGENT":request["HTTP_USER_AGENT"]
+        }
         self.raw['input'] = {}
         self.location = request['PATH_INFO']
         self.combine_request_dicts()
@@ -135,7 +153,18 @@ def init(configuration=None): #初始化
         _hub = Elegy(configuration)
 
 def elegy_404():  #报错
-    return "404"
+    return  template("404.html",error='No matching routes registered')
+
+def template(template_path, template_dict=None,**kwargs):
+    global _hub
+    template_obj = _hub.config['template_env'].get_template(template_path)
+    if template_dict:
+        html = template_obj.render(**template_dict)
+    else:
+        html = template_obj.render(**kwargs)
+    return html
+
+
 
 def run():#启动
     """Start Juno, with an optional mode argument."""
@@ -164,8 +193,8 @@ def application(environ, start_response):   #返回结果
 
     body, status = _hub.process_func(environ,environ['REQUEST_METHOD'])
 
-    start_response(status, [('Content-type', 'text/plain')])
-    return [str(body).encode("gbk")]
+    start_response(status, [('Content-type', 'text/html;charset=utf8')])
+    return [str(body).encode("utf-8")]
 
 
 def run_dev(host,port):  #启动服务
